@@ -1,3 +1,4 @@
+# 前面是一些笔记
 ![img.png](img.png)
 ![img_1.png](img_1.png)
 ![img_2.png](img_2.png)
@@ -6,6 +7,7 @@
 ![img_5.png](img_5.png)
 ![img_6.png](img_6.png)
 ![img_7.png](img_7.png)
+
 # LayerNorm 
 
 LayerNorm（层归一化）：**对每个词位置的向量，单独做一次归一化**，把数值拉到均值接近 0、方差接近 1 的分布，再用两个可学习参数调整幅度和偏移。
@@ -69,3 +71,33 @@ point = point.masked_fill(pad_mask, float("-inf"))
 - 第一个：掩码张量，布尔值；
 - 第二个：填充值。
 **掩码为 `True` 的位置，用填充值替换；为 `False` 的位置，保持原值不变。**
+
+# 写的过程中遇到的一些问题
+1. 三维张量误用 `.T` 转置
+- `Q1 @ K1.T` 维度对不上
+- 忘记了三维 `.T` 会反转全部维度，不是只交换最后两维
+- 改用 `K1.transpose(-1, -2)`
+
+2. 我还浪费时间自己写了一个embedding
+```python
+embedding=torch.randn(len(vocab),fea)
+
+result_1=torch.zeros(sen_tensor.size(0),max_len,fea)
+for i in range(sen_tensor.size()[0]):
+    for j in range(sen_tensor.size()[1]):
+        if sen_tensor[i][j]!=padding_num:
+            num=sen_tensor[i][j]
+            result_1[i][j]=embedding[num]
+print(result_1)
+        对应的向量的初始位置也是要训练的
+```
+- 写完我还觉得挺对，后面突然想起来这玩意要更新的啊...我写一个随机初始化干嘛
+
+3. layernorm
+- 一开始没仔细看要传什么我写成了nn.LayerNorm(dim=-1)
+- 后来想可能是一下搞混了函数传的要处理的维度比如说sum，但是这里要传特征数实际上需要的是特征数才能创建里面需要的矩阵啊！
+
+4. 整数张量叫longtensor，虽然整数一般用int
+
+5. id用作变量名了
+- 我写的时候把一个变量叫做id结果变色了，原来这是一个函数呀
